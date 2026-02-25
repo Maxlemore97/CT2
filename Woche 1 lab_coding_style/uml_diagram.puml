@@ -1,0 +1,88 @@
+@startuml dice_application
+
+title UML-Moduldiagramm - Electronic Dice Application
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "main.c" as main {
+    class "main" <<module>> {
+        + main() : int
+        --
+        dice_number : uint8_t
+        i : uint8_t
+        number_of_throws : uint8_t
+        button_state : uint8_t
+    }
+}
+
+package "dice.h" as dice {
+    class "dice" <<constants>> {
+        + {static} NR_OF_DICE_VALUES = 6
+    }
+}
+
+package "button_state" as button {
+    class "button_state" <<module>> {
+        - {static} last_button_state : uint8_t = 0x0
+        --
+        + button_state_eval() : uint8_t
+    }
+}
+
+package "counter" as cnt {
+    class "counter" <<module>> {
+        - {static} dice_counter : uint8_t = 1
+        --
+        + counter_increment() : void
+        + counter_read() : uint8_t
+    }
+}
+
+package "display" as disp {
+    class "display" <<module>> {
+        - {static} LCD_ADDR_LINE1 = 0
+        - {static} LCD_ADDR_LINE2 = 20
+        - {static} NR_OF_CHAR_PER_LINE = 20
+        --
+        + display_clear() : void
+        + display_write_throw(dice_number : uint8_t) : void
+        + display_write_value(slot_nr : uint8_t, value : uint8_t) : void
+        + display_write_total(total_value : uint8_t) : void
+    }
+}
+
+package "statistics" as stats {
+    class "statistics" <<module>> {
+        - {static} nr_of_throws : uint8_t[7] = {0}
+        + {static} ERROR_VALUE = 0xFF
+        --
+        + statistics_add_throw(throw_value : uint8_t) : void
+        + statistics_read(dice_number : uint8_t) : uint8_t
+    }
+}
+
+package "HAL Layer" as hal {
+    class "hal_ct_seg7" <<hardware>> {
+        + hal_ct_seg7_bin_write(value) : void
+    }
+    class "reg_ctboard" <<hardware>> {
+        + CT_LCD : LCD_TypeDef*
+        + CT_BUTTON : uint8_t
+    }
+}
+
+' Dependencies
+main ..> button : <<uses>>\nbutton_state_eval()
+main ..> cnt : <<uses>>\ncounter_read()\ncounter_increment()
+main ..> disp : <<uses>>\ndisplay_clear()\ndisplay_write_throw()\ndisplay_write_value()\ndisplay_write_total()
+main ..> stats : <<uses>>\nstatistics_add_throw()\nstatistics_read()
+main ..> dice : <<uses>>\nNR_OF_DICE_VALUES
+
+cnt ..> dice : <<uses>>\nNR_OF_DICE_VALUES
+stats ..> dice : <<uses>>\nNR_OF_DICE_VALUES
+
+disp ..> hal : <<uses>>\nCT_LCD\nhal_ct_seg7_bin_write()
+button ..> hal : <<uses>>\nCT_BUTTON
+
+@enduml
