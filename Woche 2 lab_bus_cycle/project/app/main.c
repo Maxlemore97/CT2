@@ -23,7 +23,7 @@
 
 //#define MODE_8BIT_EVEN
 //#define MODE_8BIT_ODD
-#define MODE_16BIT
+//#define MODE_16BIT
 //#define MODE_32BIT
 
 
