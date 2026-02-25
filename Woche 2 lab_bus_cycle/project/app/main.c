@@ -58,10 +58,8 @@
 #else
     // halfword access to odd address
     /// STUDENTS: To be programmed
-
-
-
-
+    #define CT_LED      (*((volatile uint16_t *) ADDR_LED_15_8))
+    #define CT_DIPSW    (*((volatile uint16_t *) ADDR_DIPSW_15_8))
     /// END: To be programmed
 #endif    
 
