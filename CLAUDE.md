@@ -37,6 +37,10 @@ CT2 (Computertechnik 2) repository for ZHAW coursework. Contains embedded C proj
 - Keil µVision project files (`.uvprojx`, `.uvoptx`, `.uvguix.*`)
 - Do NOT modify Keil project files unless explicitly asked
 
+## Commits
+- Commit-Messages auf Deutsch
+- Claude NIEMALS als Co-Autor oder Co-Contributor aufführen (kein `Co-Authored-By` oder ähnliches)
+
 ## Important Notes
 - Do not commit `.idea/`, `.DS_Store` or other IDE-specific files
 - Binary build artifacts in `build/` should generally not be committed
