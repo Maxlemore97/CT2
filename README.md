@@ -34,6 +34,22 @@ Analyse von Speicherbus-Zugriffen auf dem CT-Board mit Logic Analyzer.
 - Halfword-Zugriff auf ungerade Adressen (S23…8 → LEDs 23…8)
 - Logic-Analyzer-Messungen der verschiedenen Zugriffsarten
 
+### Woche 3 - GPIO (General Purpose Input/Output)
+Konfiguration und Verwendung von GPIO-Pins zur Ein- und Ausgabe mittels Registerzugriff.
+
+**Themen aus der Lektion:**
+- GPIO-Konfiguration über Register: MODER, OTYPER, OSPEEDR, PUPDR
+- Registerzugriff über HAL-Strukturen (`reg_stm32f4xx.h`): Basisadressen, Macros, Structs
+- Output-Typen: Push-Pull vs. Open Drain
+- Pull-up / Pull-down Widerstände und deren Einfluss auf Eingänge
+- Unterschiedliche Output-Geschwindigkeiten (Low, Medium, High, Very High)
+
+**Praktikum:**
+- GPIOA (PA0–PA2) als Eingänge konfigurieren mit verschiedenen Pull-Konfigurationen
+- GPIOB (PB0–PB2) als Ausgänge konfigurieren (Push-Pull, Open Drain, verschiedene Speeds)
+- DIP-Switches einlesen, über GPIO ausgeben und über Verbindungsdrähte zurücklesen
+- Untersuchung aller Output/Input-Kombinationen (Push-Pull vs. Open Drain, Pull-up/down/none)
+
 ## Projektstruktur
 
 ```
@@ -46,6 +62,9 @@ CT2/
 ├── Woche 2 lab_bus_cycle/
 │   ├── project/app/       # Bus-Cycle Applikation
 │   └── *.jpeg             # Logic-Analyzer Screenshots
+├── Woche 3 lab_gpio/
+│   ├── project/app/       # GPIO Applikation
+│   └── lab_GPIO_fragen.md # Vorbereitungsfragen & Antworten
 ```
 
 ## Toolchain
