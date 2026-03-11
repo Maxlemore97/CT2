@@ -58,8 +58,22 @@ int main(void)
         /* implement tasks 6.1 to 6.2 below */
         /// STUDENTS: To be programmed
 
+        // 1. Read DIP switches S10..S8 (Task 6.3)
+        data_dip_switch = (uint8_t)(CT_DIPSW->BYTE.S15_8 & MASK_3_BITS);
 
+        // 2. Display DIP switches on LED10..LED8 for debugging
+        // Use struct CT_LED->BYTE as required by the lab
+        CT_LED->BYTE.LED15_8 = data_dip_switch;
 
+        // 3. Write the switch values to the GPIOB Output Data Register
+        GPIOB->ODR = (uint32_t)data_dip_switch;
+
+        // 4. Read back from GPIOB ODR and show on LED2..LED0
+        CT_LED->BYTE.LED7_0 = (uint8_t)(GPIOB->ODR & MASK_3_BITS);
+
+        // 5. Read input from GPIOA and show on LED18..LED16
+        data_gpio_in = (uint16_t)(GPIOA->IDR & MASK_3_BITS);
+        CT_LED->BYTE.LED23_16 = (uint8_t)data_gpio_in;
 
         /// END: To be programmed
     }
@@ -79,8 +93,14 @@ static void init_GPIOA(void)
 		/* 6.1 define inputs */
     /// STUDENTS: To be programmed
 
-
-
+    // 1. Set Mode to Input (00) for pins 0, 1, 2
+    GPIOA->MODER &= ~(0x3F << 0); // Clear bits 0-5
+    
+    // 2. Configure Pull-up/down 
+    GPIOA->PUPDR &= ~(0x3F << 0); // Clear PUPDR bits 0-5
+    GPIOA->PUPDR |= (0x02 << 0);  // PA0: Pull-down (10)
+    GPIOA->PUPDR |= (0x01 << 2);  // PA1: Pull-up (01)
+    // PA2 remains 00 (No pull)
 
     /// END: To be programmed
 		
@@ -97,11 +117,34 @@ static void init_GPIOA(void)
 */
 static void init_GPIOB(void)
 {
-		/* 6.2 define outputs */
     /// STUDENTS: To be programmed
 
+		// 1. Configure GPIOB Pins 0, 1, 2 as General Purpose Output (Mode 01)
+    // Clear bits 0-5 (2 bits per pin)
+    GPIOB->MODER &= ~(0x0000003F); 
+    // Set bits to 010101 (hex 15)
+    GPIOB->MODER |=  (0x00000015);
 
+    // 2. Configure Output Type (OTYPER)
+    // PB0: Push-Pull (0), PB1: Open Drain (1), PB2: Open Drain (1)
+    // Clear bits 0-2 (1 bit per pin)
+    GPIOB->OTYPER &= ~(0x00000007); 
+    // Set bits to 110 (hex 06)
+    GPIOB->OTYPER |=  (0x00000006);
 
+    // 3. Configure Output Speed (OSPEEDR)
+    // PB0: Low (00), PB1: Medium (01), PB2: High (11)
+    // Clear bits 0-5
+    GPIOB->OSPEEDR &= ~(0x0000003F); 
+    // Set bits to 110100 (hex 34)
+    GPIOB->OSPEEDR |=  (0x00000034);
+
+    // 4. Configure Pull-up/Pull-down (PUPDR)
+    // PB0: No Pull (00), PB1: No Pull (00), PB2: Pull-up (01)
+    // Clear bits 0-5
+    GPIOB->PUPDR &= ~(0x0000003F); 
+    // Set bits to 010000 (hex 10)
+    GPIOB->PUPDR |=  (0x00000010);
 
     /// END: To be programmed
 
