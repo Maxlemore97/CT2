@@ -57,8 +57,37 @@ uint8_t read_display_buffer(uint8_t *readBuffer)
 {
     /// STUDENTS: To be programmed
 
+    uint8_t rec_bytes = 0;
+    uint8_t len;
+    uint8_t i;
 
+    /* Sende Leseanfrage und prüfe ACK */
+    if (send_read_display_buffer_request() != SUCCESS) {
+        return 0;
+    }
 
+    /* Warte bis Display Daten bereit hat (SBUF = 1) */
+    while (hal_sbuf_get_state() == 0) {
+        /* warten */
+    }
+
+    /* Empfange Antwortpaket: DC1, len, Nutzdaten..., bcc */
+    /* DC1 lesen */
+    hal_spi_read_write(0x00);
+
+    /* Länge lesen */
+    len = hal_spi_read_write(0x00);
+
+    /* Nutzdaten lesen */
+    for (i = 0; i < len; i++) {
+        readBuffer[i] = hal_spi_read_write(0x00);
+        rec_bytes++;
+    }
+
+    /* bcc lesen (verwerfen) */
+    hal_spi_read_write(0x00);
+
+    return rec_bytes;
 
     /// END: To be programmed
 }
@@ -122,8 +151,32 @@ static uint8_t send_read_display_buffer_request(void)
 {
     /// STUDENTS: To be programmed
 
+    uint8_t bcc = 0;
+    uint8_t rec_byte;
 
+    /* DC2 senden */
+    hal_spi_read_write(DC2_CHAR);
+    bcc += DC2_CHAR;
 
+    /* Länge senden (0x01) */
+    hal_spi_read_write(ONE_CHAR);
+    bcc += ONE_CHAR;
+
+    /* Kommando 'S' (0x53) senden - Send-Buffer auslesen */
+    hal_spi_read_write(0x53);
+    bcc += 0x53;
+
+    /* Prüfsumme senden */
+    hal_spi_read_write(bcc);
+
+    /* ACK empfangen */
+    rec_byte = hal_spi_read_write(0x00);
+
+    if (rec_byte == ACK_CHAR) {
+        return SUCCESS;
+    } else {
+        return ERRORCODE;
+    }
 
     /// END: To be programmed
 
