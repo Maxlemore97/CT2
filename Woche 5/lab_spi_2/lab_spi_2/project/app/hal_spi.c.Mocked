@@ -8,11 +8,28 @@
  * ------------------------------------------------------------------
  * --
  * -- Module      : SPI Library
- * -- Description :
  * --
- * -- $Id: hal_spi.c 4707 2019-02-26 09:32:59Z ruan $
+ * -- $Id: hal_spi.c 4720 2019-03-04 10:11:31Z akdi $
  * ------------------------------------------------------------------
  */
+
+#ifdef MOCKED_SPI_DISPLAY
+#include "hal_spi.h"
+#include "hal_mocked.h"
+
+void hal_spi_init(void)
+{
+    hal_mocked_spi_init();
+}
+
+
+uint8_t hal_spi_read_write(uint8_t send_byte)
+{
+    return hal_mocked_spi_read_write(send_byte);
+}
+
+
+#else  // !MOCKED_SPI_DISPLAY
 #include <reg_stm32f4xx.h>
 #include "hal_spi.h"
 
@@ -44,15 +61,14 @@ void hal_spi_init(void)
     SPI1->CR1 = 0x0000;             /**< set spi to default state */
 
     /// STUDENTS: To be programmed
-    SPI1->CR1 |= (0x7 << 3);   // BR[2:0] = 111 --> fPCLK/256 = 164 kHz
-    SPI1->CR1 |= (0x1 << 2);   // MSTR = 1      --> Master mode
-    SPI1->CR1 |= (0x1 << 9);   // SSM = 1       --> Software slave management
-    SPI1->CR1 |= (0x1 << 8);   // SSI = 1       --> Internal slave select high
-    SPI1->CR1 |= (0x1 << 6);   // SPE = 1       --> SPI enable (set last)
+
+
+
+
     /// END: To be programmed
-    
     set_ss_pin_high();
 }
+
 
 /*
  * according to description in header file
@@ -61,28 +77,15 @@ uint8_t hal_spi_read_write(uint8_t send_byte)
 {
     /// STUDENTS: To be programmed
 
-    uint8_t rec_byte;
 
-    set_ss_pin_low();
 
-    while (!(SPI1->SR & BIT_TXE)) {}    // wait until Tx buffer empty
-    SPI1->DR = send_byte;                // write byte to data register
-
-    while (!(SPI1->SR & BIT_RXNE)) {}   // wait until Rx buffer not empty
-    rec_byte = SPI1->DR;                 // read received byte
-
-    while (SPI1->SR & BIT_BSY) {}        // wait until SPI not busy
-
-    wait_10_us();
-    set_ss_pin_high();
-
-    return rec_byte;
 
     /// END: To be programmed
 }
 
+
 /**
- * \brief  Set Slave-Select Pin (P5.5 --> PA4) low
+ * Set Slave-Select Pin (Port A, Pin 5) low
  *
  * No parameters
  *
@@ -90,11 +93,12 @@ uint8_t hal_spi_read_write(uint8_t send_byte)
  */
 static void set_ss_pin_low(void)
 {
-    GPIOA->BSRR = 0x00100000;          // Set P5.5 --> PA4 low
+    GPIOA->BSRR |= 0x0010 << 16;    /**< Set Port A, Pin 5 low */
 }
 
+
 /**
- * \brief  Set Slave-Select Pin (P5.5 --> PA4) high
+ * Set Slave-Select Pin (Port A, Pin 5) high
  *
  * No parameters
  *
@@ -102,11 +106,12 @@ static void set_ss_pin_low(void)
  */
 static void set_ss_pin_high(void)
 {
-    GPIOA->BSRR = 0x00000010;          // Set P5.5 --> PA4 high
+    GPIOA->BSRR |= 0x0010;          /**< Set Port A, Pin 5 high */
 }
 
+
 /**
- * \brief  Wait for approximately 10us
+ * Wait for approximately 10us
  *
  * No parameters
  *
@@ -119,3 +124,6 @@ static void wait_10_us(void)
         counter++;
     }
 }
+
+
+#endif // MOCKED_SPI_DISPLAY

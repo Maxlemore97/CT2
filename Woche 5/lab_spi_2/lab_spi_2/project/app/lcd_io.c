@@ -70,9 +70,44 @@ uint8_t read_display_buffer(uint8_t *readBuffer)
 uint8_t write_cmd_to_display(const uint8_t *cmdBuffer, uint8_t length)
 {
     /// STUDENTS: To be programmed
+    
+    uint8_t bcc = 0;
+    uint8_t rec_byte;
+    uint8_t i;
+    
+    // Die Länge muss um 1 erhöht werden, da das ESC Zeichen dazu zählt
+    uint8_t total_length = length + 1; 
 
+    // 1. Sende Start-Steuerzeichen DC1 (0x11)
+    hal_spi_read_write(DC1_CHAR);
+    bcc += DC1_CHAR;
 
+    // 2. Sende Länge der Nutzdaten (inkl. ESC)
+    hal_spi_read_write(total_length);
+    bcc += total_length;
+    
+    // 3. Sende ESC Zeichen (Befehlseinleitung)
+    hal_spi_read_write(ESC_CHAR);
+    bcc += ESC_CHAR;
 
+    // 4. Sende die eigentlichen Nutzdaten (Befehlszeichenfolge)
+    for (i = 0; i < length; i++) {
+        hal_spi_read_write(cmdBuffer[i]);
+        bcc += cmdBuffer[i];
+    }
+
+    // 5. Sende Prüfsumme bcc
+    hal_spi_read_write(bcc);
+
+    // 6. Empfange Bestätigungszeichen vom Display (Dummy-Byte 0x00 senden)
+    rec_byte = hal_spi_read_write(0x00);
+
+    // 7. Werte die Antwort aus
+    if (rec_byte == ACK_CHAR) {
+        return SUCCESS;
+    } else {
+        return ERRORCODE;
+    }
 
     /// END: To be programmed
 }
