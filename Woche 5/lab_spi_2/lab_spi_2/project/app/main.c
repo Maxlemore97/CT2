@@ -53,11 +53,29 @@ int main(void)
                         (uint8_t *)"PRESS ME");
     set_cursor_on_off(CURSOR_OFF);
 
-    while (1) {
+   while (1) {
         /// STUDENTS: To be programmed
 
+        // Lese Daten vom Display
+        nrOfChars = read_display_buffer(readBuffer);
 
-
+        // Prüfe, ob wir genug Daten für eine Nachricht haben
+        if (nrOfChars >= MIN_LENGTH_BUFFER_MESSAGE) {
+            
+            // Prüfe, ob es ein Touch-Event ist (beginnt mit ESC und 'A')
+            if (readBuffer[0] == 0x1B && readBuffer[1] == 'A') {
+                
+                // readBuffer[2] ist die Button-Nummer (0x01)
+                // readBuffer[3] ist der Status (1 = DOWN, 2 = UP)
+                
+                if (readBuffer[3] == BUTTON1_DOWN) {
+                    CT_LED->BYTE.LED31_24 = LED_ON;
+                } 
+                else if (readBuffer[3] == BUTTON1_UP) {
+                    CT_LED->BYTE.LED31_24 = LED_OFF;
+                }
+            }
+        }
 
         /// END: To be programmed
     }
