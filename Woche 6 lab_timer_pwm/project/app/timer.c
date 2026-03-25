@@ -46,8 +46,8 @@
 /* Add additional macros as used by your code */
 /// STUDENTS: To be programmed
 
-
-
+#define STEP_SIZE  4000u
+#define MASK_4BIT  0x0F
 
 /// END: To be programmed
 
@@ -85,8 +85,13 @@ void tim3_init(void)
     /* add specific configuration for timer3 */
     /// STUDENTS: To be programmed
 
-
-
+    TIM3->CR1 = 0x0000;           // Upcounter (DIR = 0)
+    TIM3->PSC = 6;                // 84 MHz / 7 = 12 MHz
+    TIM3->ARR = 59999;            // 12 MHz / 60000 = 200 Hz
+    TIM3->CCMR1 = 0x6060;        // PWM Mode 1 for CH1 and CH2
+    TIM3->CCMR2 = 0x0060;        // PWM Mode 1 for CH3
+    TIM3->CCER = 0x0111;         // Enable CH1, CH2, CH3 output
+    TIM3->CR1 |= 0x0001;         // Start timer (CEN = 1)
 
     /// END: To be programmed
 }
@@ -108,8 +113,11 @@ void tim4_init(void)
     /* add specific configuration for timer4 */
     /// STUDENTS: To be programmed
 
-
-
+    TIM4->PSC = 8399;             // 84 MHz / 8400 = 10 kHz
+    TIM4->ARR = 9999;             // 10 kHz / 10000 = 1 Hz (1s)
+    TIM4->CR1 = 0x0010;          // Downcounter (DIR = 1)
+    TIM4->DIER = 0x0001;         // Update Interrupt Enable
+    TIM4->CR1 |= 0x0001;         // Start timer (CEN = 1)
 
     /// END: To be programmed
 
@@ -134,8 +142,20 @@ void tim3_set_compare_register(pwm_channel_t channel, uint16_t value)
 {
     /// STUDENTS: To be programmed
 
-
-
+    switch (channel) {
+        case PWM_CH1:
+            TIM3->CCR1 = value;
+            break;
+        case PWM_CH2:
+            TIM3->CCR2 = value;
+            break;
+        case PWM_CH3:
+            TIM3->CCR3 = value;
+            break;
+        case PWM_CH4:
+            TIM3->CCR4 = value;
+            break;
+    }
 
     /// END: To be programmed
 }
