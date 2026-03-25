@@ -46,8 +46,17 @@
 /* Add additional macros as used by your code */
 /// STUDENTS: To be programmed
 
+#define TIM3_PSC_VALUE       6u             /* 84 MHz / 7 = 12 MHz */
+#define TIM3_ARR_VALUE       59999u         /* 12 MHz / 60000 = 200 Hz (5 ms) */
+#define TIM3_CCMR1_OC12M1   0x6060u        /* OC1M=110, OC2M=110 (PWM mode 1) */
+#define TIM3_CCMR2_OC3M1    0x0060u        /* OC3M=110 (PWM mode 1) */
+#define TIM3_CCER_CC123E     0x0111u        /* CC1E, CC2E, CC3E enable */
 
-
+#define TIM4_PSC_VALUE       8399u          /* 84 MHz / 8400 = 10 kHz (100 us) */
+#define TIM4_ARR_VALUE       9999u          /* 10 kHz / 10000 = 1 Hz (1 s) */
+#define TIM4_CR1_DOWNCNT     0x0010u        /* DIR = 1 (downcounter) */
+#define TIM4_DIER_UIE        0x0001u        /* Update interrupt enable */
+#define TIM_CR1_CEN          0x0001u        /* Counter enable */
 
 /// END: To be programmed
 
@@ -85,8 +94,13 @@ void tim3_init(void)
     /* add specific configuration for timer3 */
     /// STUDENTS: To be programmed
 
-
-
+    TIM3->PSC = TIM3_PSC_VALUE;
+    TIM3->ARR = TIM3_ARR_VALUE;
+    TIM3->CR1 = 0x0000;                    /* Upcounter, all other bits 0 */
+    TIM3->CCMR1 = TIM3_CCMR1_OC12M1;      /* CH1 & CH2: PWM mode 1 */
+    TIM3->CCMR2 = TIM3_CCMR2_OC3M1;       /* CH3: PWM mode 1 */
+    TIM3->CCER = TIM3_CCER_CC123E;         /* Enable outputs CH1, CH2, CH3 */
+    TIM3->CR1 |= TIM_CR1_CEN;             /* Enable timer */
 
     /// END: To be programmed
 }
@@ -108,8 +122,11 @@ void tim4_init(void)
     /* add specific configuration for timer4 */
     /// STUDENTS: To be programmed
 
-
-
+    TIM4->PSC = TIM4_PSC_VALUE;
+    TIM4->ARR = TIM4_ARR_VALUE;
+    TIM4->CR1 = TIM4_CR1_DOWNCNT;          /* Downcounter */
+    TIM4->DIER = TIM4_DIER_UIE;            /* Enable update interrupt */
+    TIM4->CR1 |= TIM_CR1_CEN;             /* Enable timer */
 
     /// END: To be programmed
 
@@ -134,8 +151,20 @@ void tim3_set_compare_register(pwm_channel_t channel, uint16_t value)
 {
     /// STUDENTS: To be programmed
 
-
-
+    switch (channel) {
+        case PWM_CH1:
+            TIM3->CCR1 = value;
+            break;
+        case PWM_CH2:
+            TIM3->CCR2 = value;
+            break;
+        case PWM_CH3:
+            TIM3->CCR3 = value;
+            break;
+        case PWM_CH4:
+            TIM3->CCR4 = value;
+            break;
+    }
 
     /// END: To be programmed
 }

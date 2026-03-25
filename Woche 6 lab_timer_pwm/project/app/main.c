@@ -34,8 +34,11 @@
 
 /// STUDENTS: To be programmed
 
-
-
+#define SCALE_FACTOR    4000u       /* (ARR+1) / 15 = 60000 / 15 */
+#define MASK_4BIT       0x000Fu
+#define LED_ON          0xFFu
+#define LED_OFF         0x00u
+#define S31_MASK        0x80u
 
 /// END: To be programmed
 
@@ -57,8 +60,28 @@ int main(void)
 {
     /// STUDENTS: To be programmed
 
+    tim4_init();
+    tim3_init();
 
-
+    while (1) {
+        if (CT_DIPSW->BYTE.S31_24 & S31_MASK) {
+            /* Task 3.3: Periodisches Wechseln */
+            tim3_set_compare_register(PWM_CH1,
+                cycle_counter_4bit * SCALE_FACTOR);
+            tim3_set_compare_register(PWM_CH2,
+                (0xF - cycle_counter_4bit) * SCALE_FACTOR);
+            tim3_set_compare_register(PWM_CH3,
+                (CT_DIPSW->BYTE.S23_16 & MASK_4BIT) * SCALE_FACTOR);
+        } else {
+            /* Task 3.2: Manuelles Setzen der RGB Werte */
+            tim3_set_compare_register(PWM_CH1,
+                (CT_DIPSW->BYTE.S7_0 & MASK_4BIT) * SCALE_FACTOR);
+            tim3_set_compare_register(PWM_CH2,
+                (CT_DIPSW->BYTE.S15_8 & MASK_4BIT) * SCALE_FACTOR);
+            tim3_set_compare_register(PWM_CH3,
+                (CT_DIPSW->BYTE.S23_16 & MASK_4BIT) * SCALE_FACTOR);
+        }
+    }
 
     /// END: To be programmed
 }
@@ -71,8 +94,11 @@ void TIM4_IRQHandler(void)
 {
     /// STUDENTS: To be programmed
 
+    tim4_reset_uif();
 
+    CT_LED->BYTE.LED31_24 ^= LED_ON;
 
+    cycle_counter_4bit = (cycle_counter_4bit + 1) & MASK_4BIT;
 
     /// END: To be programmed
 }
