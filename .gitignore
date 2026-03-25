@@ -1,0 +1,28 @@
+# IDE
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Keil µVision Build-Artefakte
+**/build/
+**/*.o
+**/*.d
+**/*.lst
+**/*.htm
+**/*.map
+**/*.axf
+**/*.hex
+**/*.dep
+**/*.crf
+**/*.lnp
+**/Listings/
+**/Objects/
+
+# Keil GUI-spezifische Dateien (benutzerspezifisch)
+**/*.uvguix.*
+
+# Entwickler-spezifische Claude-Konfiguration
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/issues/
