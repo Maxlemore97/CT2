@@ -36,8 +36,16 @@
 
 /// STUDENTS: To be programmed
 
+#define ADC_CR1_RES_MASK    (0x3 << 24)
 
+#define ADC_CR2_ADON        (0x1 << 0)
+#define ADC_CR2_SWSTART     (0x1 << 30)
 
+#define ADC_SR_EOC          (0x1 << 1)
+
+#define ADC_CHANNEL_4       (0x4)
+
+#define FILTER_SIZE         (16)
 
 /// END: To be programmed
 
@@ -66,11 +74,17 @@ void adc_init(void)
                             // MULTI = '00000' -> ADC independent mode
 
     /* Configure ADC3 */
-    
+
     /// STUDENTS: To be programmed
 
+    /* Set sample time for channel 4: 3 cycles (SMP4 = 000 in SMPR2) */
+    ADC3->SMPR2 &= ~(0x7 << 12);
 
+    /* Set channel 4 as first conversion in regular sequence */
+    ADC3->SQR3 = ADC_CHANNEL_4;
 
+    /* Set sequence length to 1 conversion (L = 0000 in SQR1) */
+    ADC3->SQR1 = 0;
 
     /// END: To be programmed
 }
@@ -85,8 +99,21 @@ uint16_t adc_get_value(adc_resolution_t resolution)
 
     /// STUDENTS: To be programmed
 
+    /* Set resolution in CR1 */
+    ADC3->CR1 &= ~ADC_CR1_RES_MASK;
+    ADC3->CR1 |= (uint32_t)resolution;
 
+    /* Enable ADC (ADON) */
+    ADC3->CR2 |= ADC_CR2_ADON;
 
+    /* Start conversion (SWSTART) */
+    ADC3->CR2 |= ADC_CR2_SWSTART;
+
+    /* Wait for end of conversion (EOC) */
+    while (!(ADC3->SR & ADC_SR_EOC)) {}
+
+    /* Read converted value */
+    adc_value = (uint16_t)ADC3->DR;
 
     /// END: To be programmed
 
@@ -103,8 +130,23 @@ uint16_t adc_filter_value(uint16_t adc_value)
 
     /// STUDENTS: To be programmed
 
+    static uint16_t buffer[FILTER_SIZE] = { 0 };
+    uint32_t sum = 0;
+    uint8_t i;
 
+    /* Shift values: oldest drops off at index 0 */
+    for (i = 0; i < FILTER_SIZE - 1; i++) {
+        buffer[i] = buffer[i + 1];
+    }
 
+    /* Insert new value at the end */
+    buffer[FILTER_SIZE - 1] = adc_value;
+
+    /* Calculate average */
+    for (i = 0; i < FILTER_SIZE; i++) {
+        sum += buffer[i];
+    }
+    filtered_value = (uint16_t)(sum / FILTER_SIZE);
 
     /// END: To be programmed
 

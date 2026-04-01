@@ -51,8 +51,8 @@
 
 /// STUDENTS: To be programmed
 
-
-
+#define HEXSW_MASK      (0x03)
+#define FILTER_SWITCH   (0x01)
 
 /// END: To be programmed
 
@@ -71,8 +71,51 @@ int main(void)
 {
     /// STUDENTS: To be programmed
 
+    uint16_t adc_value;
+    uint16_t voltage;
+    uint8_t hex_switch;
+    adc_resolution_t resolution;
 
+    adc_init();
 
+    while (1) {
+        /* Read hex switch (bits 1:0) to select resolution */
+        hex_switch = CT_DIPSW->BYTE.S7_0 & HEXSW_MASK;
+
+        switch (hex_switch) {
+            case 0x01:
+                resolution = ADC_RES_8BIT;
+                CT_LED->HWORD.LED15_0 = 0x00FF;
+                break;
+            case 0x02:
+                resolution = ADC_RES_10BIT;
+                CT_LED->HWORD.LED15_0 = 0x03FF;
+                break;
+            case 0x03:
+                resolution = ADC_RES_12BIT;
+                CT_LED->HWORD.LED15_0 = 0x0FFF;
+                break;
+            default:
+                resolution = ADC_RES_6BIT;
+                CT_LED->HWORD.LED15_0 = 0x003F;
+                break;
+        }
+
+        /* Get ADC value */
+        adc_value = adc_get_value(resolution);
+
+        /* Apply moving average filter if DIP switch S15_8 bit 0 is set */
+        if (CT_DIPSW->BYTE.S15_8 & FILTER_SWITCH) {
+            adc_value = adc_filter_value(adc_value);
+        }
+
+        /* Display raw hex value on 7-segment */
+        CT_SEG7->BIN.HWORD = adc_value;
+
+        /* Normalize and display voltage on LCD */
+        voltage = normalize_value(adc_value, resolution);
+        display_on_lcd(voltage);
+    }
 
     /// END: To be programmed
 }
@@ -95,10 +138,25 @@ static uint16_t normalize_value(uint16_t value, adc_resolution_t resolution)
 
     /// STUDENTS: To be programmed
 
+    switch (resolution) {
+        case ADC_RES_6BIT:
+            normalized = (uint32_t)value * 3300 / 63;
+            break;
+        case ADC_RES_8BIT:
+            normalized = (uint32_t)value * 3300 / 255;
+            break;
+        case ADC_RES_10BIT:
+            normalized = (uint32_t)value * 3300 / 1023;
+            break;
+        case ADC_RES_12BIT:
+            normalized = (uint32_t)value * 3300 / 4095;
+            break;
+        default:
+            normalized = 0;
+            break;
+    }
 
-
-
-    /// END: To be programmeds
+    /// END: To be programmed
 
     /* Return 16bit value -> max after normalization = 3300 */
     return (uint16_t)normalized;
