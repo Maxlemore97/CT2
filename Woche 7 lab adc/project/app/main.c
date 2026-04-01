@@ -48,12 +48,9 @@
 
 /* -- Macros used by student code
  * ------------------------------------------------------------------------- */
-
 /// STUDENTS: To be programmed
-
-
-
-
+#define HEXSW_RES_MASK    (0x03) // Mask to read the lowest 2 bits of the HEX switch
+#define DIPSW_FILTER_MASK (0x01) // Mask to read DIP Switch 0
 /// END: To be programmed
 
 
@@ -70,10 +67,79 @@ static void convert_hex_to_ascii(uint16_t hex_value, char* characters);
 int main(void)
 {
     /// STUDENTS: To be programmed
+    adc_init();
 
+    while (1) {
+        adc_resolution_t current_res;
+        uint16_t led_mask = 0;
 
+        /* * 1. Read the HEX switch to determine the desired resolution.
+         * We only care about the lowest 2 bits (values 0, 1, 2, or 3).
+         */
+         uint8_t hex_sw = CT_HEXSW & HEXSW_RES_MASK;        
+        
+         /* * 2. Set the resolution enum and the LED pattern based on the switch.
+         * The LEDs are mapped to bits. 0x003F = 0000 0000 0011 1111 (6 LEDs on).
+         */
+        switch (hex_sw) {
+            case 0: // xx00b -> 6-bit
+                current_res = ADC_RES_6BIT;
+                led_mask = 0x003F; /* 6 LEDs */
+                break;
+            case 1: // xx01b -> 8-bit
+                current_res = ADC_RES_8BIT;
+                led_mask = 0x00FF; /* 8 LEDs */
+                break;
+            case 2: // xx10b -> 10-bit
+                current_res = ADC_RES_10BIT;
+                led_mask = 0x03FF; /* 10 LEDs */
+                break;
+            case 3: // xx11b -> 12-bit
+                current_res = ADC_RES_12BIT;
+                led_mask = 0x0FFF; /* 12 LEDs */
+                break;
+            default:
+                current_res = ADC_RES_6BIT;
+                led_mask = 0x003F;
+                break;
+        }
 
+        /* * 3. Update the LEDs on the board.
+         */
+        CT_LED->HWORD.LED15_0 = led_mask;
 
+       /* * 4. Get the raw ADC value using our selected resolution.
+         */
+        uint16_t raw_val = adc_get_value(current_res);
+
+        /* * 5. Feed the filter.
+         * We ALWAYS send the new value to the filter so its history 
+         * stays updated, even if we don't display the filtered result yet.
+         */
+        uint16_t filtered_val = adc_filter_value(raw_val);
+        uint16_t display_val;
+
+        /* * 6. Check DIP Switch 0 to toggle the filter output.
+         * If the switch is ON, we use the smoothed value.
+         * If OFF, we use the jumpy raw value.
+         */
+        if (CT_DIPSW->BYTE.S7_0 & DIPSW_FILTER_MASK) {
+            display_val = filtered_val;
+        } else {
+            display_val = raw_val;
+        }
+
+        /* * 7. Display the CHOSEN value on the 7-segment display!
+         * Now the 7-segment display will also stop fluctuating when the filter is ON.
+         */
+        CT_SEG7->BIN.HWORD = display_val;
+
+        /* * 8. Normalize to voltage range (0 - 3300) and display on LCD.
+         * We pass the chosen display_val to the math function.
+         */
+        uint16_t norm_val = normalize_value(display_val, current_res);
+        display_on_lcd(norm_val);
+    }
     /// END: To be programmed
 }
 
@@ -94,11 +160,34 @@ static uint16_t normalize_value(uint16_t value, adc_resolution_t resolution)
     uint32_t normalized;
 
     /// STUDENTS: To be programmed
-
-
-
-
-    /// END: To be programmeds
+    uint16_t max_val = 63; // Default
+    
+    /* * STEP 1: Determine the maximum value based on the chosen resolution.
+     * 6-bit  = 2^6 - 1  = 63
+     * 8-bit  = 2^8 - 1  = 255
+     * 10-bit = 2^10 - 1 = 1023
+     * 12-bit = 2^12 - 1 = 4095
+     */
+    switch (resolution) {
+        case ADC_RES_6BIT:  
+            max_val = 63;   
+            break;
+        case ADC_RES_8BIT:  
+            max_val = 255;  
+            break;
+        case ADC_RES_10BIT: 
+            max_val = 1023; 
+            break;
+        case ADC_RES_12BIT: 
+            max_val = 4095; 
+            break;
+    }
+    
+    /* * STEP 2: Scale using integer arithmetic.
+     * We map the raw value (0 to max_val) to the voltage range (0 to 3300).
+     */
+    normalized = ((uint32_t)value * 3300) / max_val;
+    /// END: To be programmed
 
     /* Return 16bit value -> max after normalization = 3300 */
     return (uint16_t)normalized;
