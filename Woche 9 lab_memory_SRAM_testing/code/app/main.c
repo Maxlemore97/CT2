@@ -30,8 +30,7 @@
 /* Set-up the macros (#defines) for your test */
 /// STUDENTS: To be programmed
 
-
-
+#define SRAM_BASE_ADDR  0x64000000UL
 
 /// END: To be programmed
 
@@ -40,11 +39,14 @@ int main(void)
     hal_fmc_sram_init_t init;
     hal_fmc_sram_timing_t timing;
     
-    /* add your required automatic (local) variables here */ 
+    /* add your required automatic (local) variables here */
     /// STUDENTS: To be programmed
 
-
-
+    volatile uint8_t *walking_ones_addr =
+        (volatile uint8_t *)(SRAM_BASE_ADDR + WALKING_ONES_ADDRESS);
+    uint8_t pattern;
+    uint8_t failed_patterns;
+    uint8_t i;
 
     /// END: To be programmed
 
@@ -65,8 +67,18 @@ int main(void)
     /* Data Bus Test - Walking ONES test */
     /// STUDENTS: To be programmed
 
+    failed_patterns = 0x00;
 
+    for (i = 0; i < NR_OF_DATA_LINES; i++) {
+        pattern = (uint8_t)(0x01u << i);
+        *walking_ones_addr = pattern;
+        if (*walking_ones_addr != pattern) {
+            /* Bit des fehlgeschlagenen Patterns auf LED7..0 anzeigen */
+            failed_patterns |= pattern;
+        }
+    }
 
+    CT_LED->BYTE.LED7_0 = failed_patterns;
 
     /// END: To be programmed
     
