@@ -104,10 +104,49 @@ int main(void)
      */
     
     /// STUDENTS: To be programmed
+    {
+        volatile uint8_t *sram = (volatile uint8_t *)SRAM_BASE_ADDR;
+        uint16_t test_address;
+        uint16_t check_address;
+        uint8_t  expected;
+        uint16_t address_errors = 0x0000;
 
+        /* (1) Alle Adressen der Untermenge mit CHECKER_BOARD initialisieren */
+        check_address = (uint16_t)0x01 << NR_OF_ADDRESS_LINES;
+        while (check_address) {
+            check_address >>= 1;
+            sram[check_address] = CHECKER_BOARD;
+        }
 
+        /* (2) Für jede Testadresse (von der höchsten bis 0x000) */
+        test_address = (uint16_t)0x01 << NR_OF_ADDRESS_LINES;
+        while (test_address) {
+            test_address >>= 1;
 
+            /* Inverses Muster an Testadresse schreiben */
+            sram[test_address] = INVERSE_CHECKER_BOARD;
 
+            /* Alle Untermengen-Adressen prüfen */
+            check_address = (uint16_t)0x01 << NR_OF_ADDRESS_LINES;
+            while (check_address) {
+                check_address >>= 1;
+                expected = (check_address == test_address)
+                             ? INVERSE_CHECKER_BOARD
+                             : CHECKER_BOARD;
+                if (sram[check_address] != expected) {
+                    /* 0x001..0x400 -> LED16..LED26, 0x000 -> LED27 */
+                    address_errors |= (test_address == 0)
+                                        ? (uint16_t)(1u << NR_OF_ADDRESS_LINES)
+                                        : test_address;
+                }
+            }
+
+            /* Testadresse wieder auf CHECKER_BOARD zurücksetzen */
+            sram[test_address] = CHECKER_BOARD;
+        }
+
+        CT_LED->HWORD.LED31_16 = address_errors;
+    }
      /// END: To be programmed
     
     /* Device Test 
