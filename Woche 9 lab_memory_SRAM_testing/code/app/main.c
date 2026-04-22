@@ -48,6 +48,42 @@ int main(void)
     uint8_t failed_patterns;
     uint8_t i;
 
+    /* --- Variablen für den Address Bus Test --- */
+    volatile uint8_t *sram = (volatile uint8_t *)SRAM_BASE_ADDR;
+
+    /* Die 12 Testadressen aus dem PDF (Zweierpotenzen + 0x000) */
+    uint16_t addresses[12] = {
+        0x400, 0x200, 0x100, 0x080,
+        0x040, 0x020, 0x010, 0x008,
+        0x004, 0x002, 0x001, 0x000
+    };
+
+    /* Welche LED gehört zu welcher Testadresse (Abb. 9 im PDF).
+       Wert = Bitmaske für CT_LED->HWORD.LED31_16.
+       z.B. 0x0400 -> Bit 10 gesetzt -> LED26 leuchtet.
+       Reihenfolge passt 1:1 zum Array "addresses" oben. */
+    uint16_t led_bit[12] = {
+        0x0400,  /* Adresse 0x400 -> LED26 (A10) */
+        0x0200,  /* Adresse 0x200 -> LED25 (A9)  */
+        0x0100,  /* Adresse 0x100 -> LED24 (A8)  */
+        0x0080,  /* Adresse 0x080 -> LED23 (A7)  */
+        0x0040,  /* Adresse 0x040 -> LED22 (A6)  */
+        0x0020,  /* Adresse 0x020 -> LED21 (A5)  */
+        0x0010,  /* Adresse 0x010 -> LED20 (A4)  */
+        0x0008,  /* Adresse 0x008 -> LED19 (A3)  */
+        0x0004,  /* Adresse 0x004 -> LED18 (A2)  */
+        0x0002,  /* Adresse 0x002 -> LED17 (A1)  */
+        0x0001,  /* Adresse 0x001 -> LED16 (A0)  */
+        0x0800   /* Adresse 0x000 -> LED27       */
+    };
+
+    uint16_t address_error_leds = 0x0000;
+    uint16_t test_address;
+    uint16_t check_address;
+    uint8_t  expected;
+    uint8_t  actual_value;
+    int k, j;
+
     /// END: To be programmed
 
     init.address_mux = DISABLE;                             // setup peripheral
@@ -104,49 +140,61 @@ int main(void)
      */
     
     /// STUDENTS: To be programmed
-    {
-        volatile uint8_t *sram = (volatile uint8_t *)SRAM_BASE_ADDR;
-        uint16_t test_address;
-        uint16_t check_address;
-        uint8_t  expected;
-        uint16_t address_errors = 0x0000;
 
-        /* (1) Alle Adressen der Untermenge mit CHECKER_BOARD initialisieren */
-        check_address = (uint16_t)0x01 << NR_OF_ADDRESS_LINES;
-        while (check_address) {
-            check_address >>= 1;
-            sram[check_address] = CHECKER_BOARD;
-        }
+    /*
+     * Ablauf:
+     *   1) Alle 12 Testadressen mit 0xAA (CHECKER_BOARD) vorschreiben.
+     *   2) Für jede der 12 Testadressen:
+     *        a) 0x55 (INVERSE_CHECKER_BOARD) an die Testadresse schreiben.
+     *        b) Alle 12 Adressen durchlesen und kontrollieren:
+     *           - an der Testadresse MUSS 0x55 stehen,
+     *           - an allen anderen Adressen MUSS 0xAA stehen.
+     *           Wenn irgendwo was falsches steht -> Fehler-LED für
+     *           diese Testadresse merken.
+     *        c) Testadresse wieder auf 0xAA zurückschreiben.
+     *   3) Am Ende die gemerkten Fehler-LEDs auf LED31..16 ausgeben.
+     */
 
-        /* (2) Für jede Testadresse (von der höchsten bis 0x000) */
-        test_address = (uint16_t)0x01 << NR_OF_ADDRESS_LINES;
-        while (test_address) {
-            test_address >>= 1;
+    /* Schritt 1: alle 12 Adressen auf 0xAA initialisieren */
+    for (i = 0; i < 12; i++) {
+        sram[addresses[i]] = CHECKER_BOARD;
+    }
 
-            /* Inverses Muster an Testadresse schreiben */
-            sram[test_address] = INVERSE_CHECKER_BOARD;
+    /* Schritt 2: Testschleife über alle 12 Adressen */
+    for (k = 0; k < 12; k++) {
+        test_address = addresses[k];
 
-            /* Alle Untermengen-Adressen prüfen */
-            check_address = (uint16_t)0x01 << NR_OF_ADDRESS_LINES;
-            while (check_address) {
-                check_address >>= 1;
-                expected = (check_address == test_address)
-                             ? INVERSE_CHECKER_BOARD
-                             : CHECKER_BOARD;
-                if (sram[check_address] != expected) {
-                    /* 0x001..0x400 -> LED16..LED26, 0x000 -> LED27 */
-                    address_errors |= (test_address == 0)
-                                        ? (uint16_t)(1u << NR_OF_ADDRESS_LINES)
-                                        : test_address;
-                }
+        /* a) Inverses Pattern an die Testadresse schreiben */
+        sram[test_address] = INVERSE_CHECKER_BOARD;
+
+        /* b) Alle 12 Adressen prüfen */
+        for (j = 0; j < 12; j++) {
+            check_address = addresses[j];
+
+            /* Welcher Wert wird erwartet? */
+            if (check_address == test_address) {
+                expected = INVERSE_CHECKER_BOARD;   /* 0x55 */
+            } else {
+                expected = CHECKER_BOARD;           /* 0xAA */
             }
 
-            /* Testadresse wieder auf CHECKER_BOARD zurücksetzen */
-            sram[test_address] = CHECKER_BOARD;
+            /* Wert aus dem Speicher lesen */
+            actual_value = sram[check_address];
+
+            /* Vergleich */
+            if (actual_value != expected) {
+                /* Fehler: LED für diese Testadresse merken */
+                address_error_leds = address_error_leds | led_bit[k];
+            }
         }
 
-        CT_LED->HWORD.LED31_16 = address_errors;
+        /* c) Testadresse wieder auf 0xAA zurücksetzen */
+        sram[test_address] = CHECKER_BOARD;
     }
+
+    /* Schritt 3: Fehler-LEDs anzeigen */
+    CT_LED->HWORD.LED31_16 = address_error_leds;
+
      /// END: To be programmed
     
     /* Device Test 
