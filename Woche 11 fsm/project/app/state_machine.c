@@ -112,7 +112,7 @@ void fsm_handle_event(event_t event)
             if (event == EV_DOOR0_OPEN_REQ) {
                 ah_door(DOOR_OPEN);
                 ah_show_state(TEXT_F0_OPENED);
-							  eh_weight_control(WCTL_DISABLE, 0);
+							  eh_weight_control(WCTL_ENABLE, 50);
                 state = F0_OPENED;
             }
             /* 4.2 / 4.3a: lift drive up via safety pause */
@@ -141,6 +141,7 @@ void fsm_handle_event(event_t event)
             } 
 						else if (event == EV_WEIGHT_TOO_HIGH) {
 								ah_show_exception(WARNING, "Too much weight");
+							  state = F0_OPENED_TOO_HEAVY;
 						}
             break;
 
@@ -195,8 +196,10 @@ void fsm_handle_event(event_t event)
 						
 						// 4.3c
 				case F0_OPENED_TOO_HEAVY:
-					  if (EV_WEIGHT_OK){
+					  if (event == EV_WEIGHT_OK){
 							ah_show_exception(NORMAL, "");
+							ah_show_state(TEXT_F0_OPENED);
+							state = F0_OPENED;
 						}
 
         default:
