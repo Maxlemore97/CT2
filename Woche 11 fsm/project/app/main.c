@@ -28,7 +28,9 @@
 int main(void)
 {
     /// STUDENTS: To be programmed
+    timer_init();
     fsm_init();
+	  eh_init();
 
     while (1) {
         event_t event = eh_get_event();
