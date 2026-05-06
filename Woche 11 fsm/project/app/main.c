@@ -28,10 +28,14 @@
 int main(void)
 {
     /// STUDENTS: To be programmed
+    fsm_init();
 
-
-
-
+    while (1) {
+        event_t event = eh_get_event();
+        if (event != EV_NO_EVENT) {
+            fsm_handle_event(event);
+        }
+    }
     /// END: To be programmed
 }
 

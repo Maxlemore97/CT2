@@ -84,14 +84,12 @@ void fsm_init(void)
 {
     action_handler_init();
     ah_show_exception(NORMAL, "");
-    
+
     /* go to initial state & do initial actions */
-    
+
     /// STUDENTS: To be programmed
-
-
-
-
+    state = F0_CLOSED;
+    ah_show_state(TEXT_F0_CLOSED);
     /// END: To be programmed
 }
 
@@ -102,9 +100,75 @@ void fsm_init(void)
 void fsm_handle_event(event_t event)
 {
     /// STUDENTS: To be programmed
+    switch (state) {
 
+        /* -- Task 4.1: door control on lower floor ---------------------- */
+        case F0_CLOSED:
+            if (event == EV_DOOR0_OPEN_REQ) {
+                ah_door(DOOR_OPEN);
+                ah_show_state(TEXT_F0_OPENED);
+                state = F0_OPENED;
+            }
+            /* -- Task 4.2: lift drive up -------------------------------- */
+            else if (event == EV_BUTTON_F1) {
+                ah_door(DOOR_LOCK);
+                ah_motor(MOTOR_UP);
+                ah_show_state(TEXT_MOVING_UP);
+                state = MOVING_UP;
+            }
+            break;
 
+        case F0_OPENED:
+            if (event == EV_DOOR0_CLOSE_REQ) {
+                ah_door(DOOR_CLOSE);
+                ah_show_state(TEXT_F0_CLOSED);
+                state = F0_CLOSED;
+            }
+            break;
 
+        /* -- Task 4.2: states on upper floor & movement ----------------- */
+        case MOVING_UP:
+            if (event == EV_F1_REACHED) {
+                ah_motor(MOTOR_OFF);
+                ah_door(DOOR_UNLOCK);
+                ah_show_state(TEXT_F1_CLOSED);
+                state = F1_CLOSED;
+            }
+            break;
 
+        case F1_CLOSED:
+            if (event == EV_DOOR1_OPEN_REQ) {
+                ah_door(DOOR_OPEN);
+                ah_show_state(TEXT_F1_OPENED);
+                state = F1_OPENED;
+            }
+            else if (event == EV_BUTTON_F0) {
+                ah_door(DOOR_LOCK);
+                ah_motor(MOTOR_DOWN);
+                ah_show_state(TEXT_MOVING_DOWN);
+                state = MOVING_DOWN;
+            }
+            break;
+
+        case F1_OPENED:
+            if (event == EV_DOOR1_CLOSE_REQ) {
+                ah_door(DOOR_CLOSE);
+                ah_show_state(TEXT_F1_CLOSED);
+                state = F1_CLOSED;
+            }
+            break;
+
+        case MOVING_DOWN:
+            if (event == EV_F0_REACHED) {
+                ah_motor(MOTOR_OFF);
+                ah_door(DOOR_UNLOCK);
+                ah_show_state(TEXT_F0_CLOSED);
+                state = F0_CLOSED;
+            }
+            break;
+
+        default:
+            break;
+    }
     /// END: To be programmed
 }
